@@ -1265,8 +1265,10 @@
         const panel = document.getElementById("add-food-panel");
 
         if (show) {
+          // Ogni volta che apro, voglio lo stato "come appena aperto il sito"
+          resetAddFoodPanelState();
+
           panel.classList.remove("hidden");
-          refreshSearchResults();
           updateStorageUsageUI();
 
           if (!addFoodPanelOpen) {
@@ -1274,11 +1276,31 @@
             addFoodPanelOpen = true;
           }
         } else {
+          // Se sto chiudendo, resetto comunque
+          resetAddFoodPanelState();
+
           panel.classList.add("hidden");
           renderDayEntries();
           addFoodPanelOpen = false;
         }
       }
+
+
+      function resetAddFoodPanelState() {
+        // Esci dalla modalità "Modifica"
+        editingBaseFoodId = null;
+
+        // Pulisci form "Nuovo alimento"
+        const form = document.getElementById("new-food-form");
+        if (form) form.reset();
+
+        // Pulisci ricerca e risultati
+        const search = document.getElementById("search-food-input");
+        if (search) search.value = "";
+
+        refreshSearchResults();
+      }
+
 
       function refreshSearchResults() {
         const container = document.getElementById("search-results");
@@ -1424,10 +1446,12 @@
           }
 
           if (addFoodPanelOpen && panel && !panel.classList.contains("hidden")) {
+            resetAddFoodPanelState(); // annulla eventuale "Modifica"
             panel.classList.add("hidden");
             renderDayEntries();
             addFoodPanelOpen = false;
           }
+
         });
 
         document
@@ -1439,8 +1463,10 @@
         document
           .getElementById("back-to-day-btn")
           .addEventListener("click", function () {
+            resetAddFoodPanelState(); // annulla eventuale "Modifica"
             history.back();
           });
+
 
         document
           .getElementById("search-food-input")
