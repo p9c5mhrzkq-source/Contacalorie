@@ -223,6 +223,28 @@
       margin-bottom: 0.75rem;
     }
 
+    .overlay-header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #111827;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid #1f2933;
+    }
+
+    .overlay-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .overlay-subtitle {
+      font-size: 0.9rem;
+      color: #ffffff;
+      font-weight: 400;
+    }
+
+
     .overlay-title {
       font-size: 1rem;
       font-weight: 600;
@@ -529,10 +551,12 @@
         <div class="total-label">Carboidrati</div>
         <div class="total-value"><span id="total-carbs">0</span> g</div>
       </div>
+
       <div class="total-card">
         <div class="total-label">Proteine</div>
         <div class="total-value"><span id="total-protein">0</span> g</div>
       </div>
+
       <div class="total-card">
         <div class="total-label">Grassi</div>
         <div class="total-value"><span id="total-fat">0</span> g</div>
@@ -553,20 +577,28 @@
   <div class="overlay hidden" id="food-detail-overlay">
     <div class="overlay-content">
       <div class="overlay-header">
-        <div class="overlay-title" id="detail-food-name"></div>
+        <div class="overlay-header-left">
+          <div class="overlay-title" id="detail-food-name"></div>
+
+          <div class="overlay-subtitle">
+            Proteine: <span id="detail-total-protein">0.0</span> g
+          </div>
+          <div class="overlay-subtitle">
+            Grassi: <span id="detail-total-fat">0.0</span> g
+          </div>
+        </div>
+
         <button class="close-btn" id="close-detail-btn" type="button">&times;</button>
       </div>
+
       <form id="food-detail-form">
         <div class="field">
           <label for="detail-quantity">Grammi</label>
           <input type="number" id="detail-quantity" min="0" step="1" />
         </div>
 
-        <div class="detail-macros">
-          ...
-        </div>
+        <div class="detail-macros">...</div>
 
-        <!-- 🔹 Nuovi pulsanti per i giorni successivi -->
         <div class="detail-actions">
           <button class="btn btn-secondary" type="button" id="remove-future-btn">
             Elimina dai giorni successivi
@@ -576,22 +608,20 @@
           </button>
         </div>
 
-
         <button class="btn btn-full" type="submit">Salva quantità</button>
       </form>
     </div>
   </div>
 
+
   <!-- Pannello inserisci / cerca cibo -->
   <div class="panel hidden" id="add-food-panel">
-    <div class="panel-header">
-    </div>
+    <div class="panel-header"></div>
+
     <div class="panel-body">
       <div class="field">
         <input type="text" id="search-food-input" placeholder="Cerca alimento..." />
       </div>
-
-      <!-- CONTATORE MEMORIA -->
 
       <div id="search-results"></div>
 
@@ -614,6 +644,7 @@
             <input type="number" id="food-carbs-input" min="0" step="0.1" />
           </div>
         </div>
+
         <div class="two-cols">
           <div class="field">
             <label for="food-protein-input">Proteine</label>
@@ -626,15 +657,12 @@
         </div>
 
         <button class="btn btn-full" type="submit">Salva alimento</button>
+
         <button class="btn btn-secondary" id="back-to-day-btn" type="button"
           style="margin-top:8rem; display:block; margin-left:auto; margin-right:auto; padding-left:3rem; padding-right:3rem;">
           Indietro
         </button>
 
-
-
-
-        <!-- CONTATORE MEMORIA (spostato qui sotto) -->
         <div id="storage-usage">Memoria usata: --%</div>
       </form>
     </div>
@@ -645,17 +673,13 @@
     <div class="dialog-content">
       <div class="dialog-message" id="app-dialog-message"></div>
       <div class="dialog-buttons">
-        <button class="btn btn-secondary" type="button" id="dialog-cancel-btn">
-          Annulla
-        </button>
-        <button class="btn" type="button" id="dialog-ok-btn">
-          Ok
-        </button>
+        <button class="btn btn-secondary" type="button" id="dialog-cancel-btn">Annulla</button>
+        <button class="btn" type="button" id="dialog-ok-btn">Ok</button>
       </div>
     </div>
   </div>
 
-
+  <!-- IL TUO JS: UNA SOLA VOLTA, QUI SOTTO -->
   <script>
     (function () {
       const STORAGE_KEYS = {
@@ -698,12 +722,17 @@
           const okBtn = document.getElementById("dialog-ok-btn");
           const cancelBtn = document.getElementById("dialog-cancel-btn");
 
-          if (options.html) {
-            // permettiamo HTML controllato
+          const hasHtml = !!options.html;
+          const hasText = !!(options.message && options.message.trim());
+
+          if (hasHtml) {
             msgEl.innerHTML = options.html;
           } else {
             msgEl.textContent = options.message || "";
           }
+
+          // Se non c’è testo, nascondo proprio la riga del messaggio
+          msgEl.style.display = (hasHtml || hasText) ? "" : "none";
 
 
           if (options.type === "confirm") {
@@ -736,7 +765,6 @@
         });
       }
 
-
       function showConfirm(message) {
         return showDialog({ type: "confirm", message: message });
       }
@@ -744,7 +772,6 @@
       function showAlert(message) {
         return showDialog({ type: "alert", message: message });
       }
-
 
       let foods = {};
       let days = {};
@@ -800,8 +827,7 @@
         const usedBytes = estimateStorageUsageBytes();
         const usedMB = usedBytes / (1024 * 1024);
 
-        el.textContent =
-          "Memoria usata: " + usedMB.toFixed(3) + " MB su 5 MB";
+        el.textContent = "Memoria usata: " + usedMB.toFixed(3) + " MB su 5 MB";
       }
 
       function saveFoods() {
@@ -819,23 +845,7 @@
       }
 
       function formatDate(date) {
-        return (
-          date.getFullYear() +
-          "-" +
-          pad(date.getMonth() + 1) +
-          "-" +
-          pad(date.getDate())
-        );
-      }
-
-      function parseDate(dateStr) {
-        const parts = dateStr.split("-");
-        if (parts.length !== 3) return null;
-        const year = Number(parts[0]);
-        const month = Number(parts[1]);
-        const day = Number(parts[2]);
-        if (!year || !month || !day) return null;
-        return new Date(year, month - 1, day);
+        return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
       }
 
       function formatDateHuman(date) {
@@ -847,26 +857,19 @@
 
       function escapeHtml(text) {
         if (!text) return "";
-        const map = {
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#039;"
-        };
-        return text.replace(/[&<>"']/g, function (ch) {
-          return map[ch];
-        });
+        const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+        return text.replace(/[&<>"']/g, function (ch) { return map[ch]; });
       }
+
+      function generateSeriesId() {
+        return "s_" + Date.now().toString(36) + "_" + Math.random().toString(16).slice(2);
+      }
+
 
       // cancella i giorni più vecchi di 1 mese rispetto ad oggi
       function cleanupOldDays() {
         const now = new Date();
-        const cutoff = new Date(
-          now.getFullYear(),
-          now.getMonth() - 1,
-          now.getDate()
-        );
+        const cutoff = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
         const cutoffStr = formatDate(cutoff);
 
         let changed = false;
@@ -881,11 +884,7 @@
 
       // ----------------- GESTIONE GIORNO CORRENTE -----------------
       function setCurrentDate(date) {
-        currentDate = new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate()
-        );
+        currentDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
         cleanupOldDays();
 
@@ -916,11 +915,7 @@
 
         const entries = days[currentDateStr] || [];
 
-        if (!entries.length) {
-          emptyMsg.style.display = "block";
-        } else {
-          emptyMsg.style.display = "none";
-        }
+        emptyMsg.style.display = entries.length ? "none" : "block";
 
         let totalKcal = 0;
         let totalCarbs = 0;
@@ -950,11 +945,11 @@
           li.draggable = true;
 
           li.innerHTML = `
-          <div class="food-main">
-            <div class="food-name">${escapeHtml(food.name)}</div>
-            <div class="food-quantity">${quantity.toFixed(0)} g</div>
-          </div>
-        `;
+            <div class="food-main">
+              <div class="food-name">${escapeHtml(food.name)}</div>
+              <div class="food-quantity">${quantity.toFixed(0)} g</div>
+            </div>
+          `;
 
           li.addEventListener("click", function () {
             openFoodDetail(index);
@@ -966,33 +961,74 @@
           list.appendChild(li);
         });
 
-        document.getElementById("total-kcal").textContent =
-          totalKcal.toFixed(0);
-        document.getElementById("total-carbs").textContent =
-          totalCarbs.toFixed(1);
-        document.getElementById("total-protein").textContent =
-          totalProt.toFixed(1);
-        document.getElementById("total-fat").textContent =
-          totalFat.toFixed(1);
+        document.getElementById("total-kcal").textContent = totalKcal.toFixed(0);
+        document.getElementById("total-carbs").textContent = totalCarbs.toFixed(1);
+        document.getElementById("total-protein").textContent = totalProt.toFixed(1);
+        document.getElementById("total-fat").textContent = totalFat.toFixed(1);
       }
+
+      function ensureSeriesIdForLegacySeriesIfNeeded(entry) {
+        if (!entry) return null;
+
+        // Se già ha seriesId, ok
+        if (entry.seriesId) return entry.seriesId;
+
+        // Crea SEMPRE un seriesId (anche se non hai premuto "Giorni successivi")
+        const seriesId = generateSeriesId();
+        entry.seriesId = seriesId;
+
+        if (!currentDate) return seriesId;
+
+        // Aggancia eventuali copie future "legacy" (stesso foodId ma senza seriesId)
+        const weekday = currentDate.getDay();
+
+        for (let i = 1; i <= 365; i++) {
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() + i);
+          if (d.getDay() !== weekday) continue;
+
+          const dateStr = formatDate(d);
+          const arr = days[dateStr];
+          if (!arr || !arr.length) continue;
+
+          // Prima occorrenza legacy dello stesso alimento
+          const idx = arr.findIndex(e => e.foodId === entry.foodId && !e.seriesId);
+          if (idx >= 0) {
+            arr[idx].seriesId = seriesId;
+          }
+        }
+
+        return seriesId;
+      }
+
+
+
 
       function reorderDayEntries(fromIndex, toIndex) {
         const entries = days[currentDateStr] || [];
-        if (
-          fromIndex < 0 ||
-          fromIndex >= entries.length ||
-          toIndex < 0 ||
-          toIndex >= entries.length
-        ) {
-          return;
-        }
+        if (fromIndex < 0 || fromIndex >= entries.length || toIndex < 0 || toIndex >= entries.length) return;
 
         const moved = entries.splice(fromIndex, 1)[0];
         entries.splice(toIndex, 0, moved);
         days[currentDateStr] = entries;
+
+        // Garantisce SEMPRE seriesId (e aggancia eventuali legacy future)
+        const sid = ensureSeriesIdForLegacySeriesIfNeeded(moved);
+
+        // Propaga SEMPRE la posizione nelle settimane successive (stesso weekday)
+        if (sid) {
+          propagateSeriesPositionToFutureSameWeekday(sid, moved.foodId, toIndex);
+        }
+
         saveDays();
         renderDayEntries();
       }
+
+
+
+
+
+
 
       function setupDragReorder(element, index) {
         element.addEventListener("dragstart", function () {
@@ -1007,9 +1043,7 @@
           draggedIndex = null;
         });
 
-        element.addEventListener("dragover", function (e) {
-          e.preventDefault();
-        });
+        element.addEventListener("dragover", function (e) { e.preventDefault(); });
 
         element.addEventListener("drop", function (e) {
           e.preventDefault();
@@ -1028,11 +1062,7 @@
         saveDays();
         renderDayEntries();
 
-        lastDeletedEntry = {
-          entry: removed,
-          dateStr: currentDateStr,
-          index: index
-        };
+        lastDeletedEntry = { entry: removed, dateStr: currentDateStr, index: index };
 
         showUndoBanner();
       }
@@ -1058,11 +1088,8 @@
           const app = document.querySelector(".app");
           const addBtn = document.getElementById("add-food-btn");
           if (app && addBtn && addBtn.parentNode === app) {
-            if (addBtn.nextSibling) {
-              app.insertBefore(banner, addBtn.nextSibling);
-            } else {
-              app.appendChild(banner);
-            }
+            if (addBtn.nextSibling) app.insertBefore(banner, addBtn.nextSibling);
+            else app.appendChild(banner);
           } else if (app) {
             app.appendChild(banner);
           }
@@ -1076,23 +1103,16 @@
           const { entry, dateStr, index } = lastDeletedEntry;
           const dayEntries = days[dateStr] || [];
 
-          if (index >= 0 && index <= dayEntries.length) {
-            dayEntries.splice(index, 0, entry);
-          } else {
-            dayEntries.push(entry);
-          }
+          if (index >= 0 && index <= dayEntries.length) dayEntries.splice(index, 0, entry);
+          else dayEntries.push(entry);
 
           days[dateStr] = dayEntries;
           saveDays();
-          if (dateStr === currentDateStr) {
-            renderDayEntries();
-          }
+          if (dateStr === currentDateStr) renderDayEntries();
 
           lastDeletedEntry = null;
-          if (undoTimeoutId) {
-            clearTimeout(undoTimeoutId);
-            undoTimeoutId = null;
-          }
+          if (undoTimeoutId) clearTimeout(undoTimeoutId);
+          undoTimeoutId = null;
           banner.style.display = "none";
         };
 
@@ -1104,10 +1124,7 @@
       }
 
       function setupSwipeToDelete(element, index) {
-        let startX = 0;
-        let startY = 0;
-        let lastDx = 0;
-        let swiping = false;
+        let startX = 0, startY = 0, lastDx = 0, swiping = false;
 
         element.addEventListener("touchstart", function (e) {
           const t = e.touches[0];
@@ -1131,18 +1148,143 @@
         });
 
         element.addEventListener("touchend", function () {
-          element.style.transition =
-            "transform 0.15s ease-out, opacity 0.15s ease-out";
+          element.style.transition = "transform 0.15s ease-out, opacity 0.15s ease-out";
           if (swiping && lastDx < -80) {
             element.style.transform = "translateX(-120%)";
             element.style.opacity = "0";
-            setTimeout(function () {
-              deleteEntry(index);
-            }, 150);
+            setTimeout(function () { deleteEntry(index); }, 150);
           } else {
             element.style.transform = "translateX(0)";
           }
         });
+      }
+
+      function computeTotalProteinForDay(dateStr, overrideIndex, overrideQuantity) {
+        const entries = days[dateStr] || [];
+        let totalProt = 0;
+
+        entries.forEach((entry, idx) => {
+          const food = foods[entry.foodId];
+          if (!food) return;
+
+          const qty = (idx === overrideIndex) ? overrideQuantity : (Number(entry.quantity) || 0);
+          const factor = (Number(qty) || 0) / 100;
+
+          totalProt += (Number(food.proteinPer100) || 0) * factor;
+        });
+
+        return totalProt;
+      }
+
+      function computeTotalFatForDay(dateStr, overrideIndex, overrideQuantity) {
+        const entries = days[dateStr] || [];
+        let totalFat = 0;
+
+        entries.forEach((entry, idx) => {
+          const food = foods[entry.foodId];
+          if (!food) return;
+
+          const qty = (idx === overrideIndex) ? overrideQuantity : (Number(entry.quantity) || 0);
+          const factor = (Number(qty) || 0) / 100;
+
+          totalFat += (Number(food.fatPer100) || 0) * factor;
+        });
+
+        return totalFat;
+      }
+
+      function updateDetailDayTotalFatLive() {
+        const el = document.getElementById("detail-total-fat");
+        if (!el) return;
+        if (editingEntryIndex == null || !currentDateStr) return;
+
+        const qtyInput = document.getElementById("detail-quantity");
+        const liveQty = Number(qtyInput && qtyInput.value) || 0;
+
+        const totalFat = computeTotalFatForDay(currentDateStr, editingEntryIndex, liveQty);
+        el.textContent = totalFat.toFixed(1);
+      }
+
+      // --- BOTTONI: Giorni successivi / Elimina dai giorni successivi ---
+      const btnApplyFuture = document.getElementById("apply-future-btn");
+      const btnRemoveFuture = document.getElementById("remove-future-btn");
+
+      btnApplyFuture.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        if (editingEntryIndex == null) return;
+
+        const entries = days[currentDateStr] || [];
+        if (editingEntryIndex < 0 || editingEntryIndex >= entries.length) return;
+
+        const entry = entries[editingEntryIndex];
+        const qty = Number(document.getElementById("detail-quantity").value);
+
+        if (!qty || qty <= 0 || !isFinite(qty)) {
+          showAlert("Inserisci una quantità valida.");
+          return;
+        }
+
+        showConfirm("").then(function (ok) {
+          if (!ok) return;
+
+
+          // aggiorna anche il giorno corrente
+          entry.quantity = qty;
+          days[currentDateStr] = entries;
+
+          if (!entry.seriesId) {
+            entry.seriesId = "s_" + Date.now().toString(36) + "_" + Math.random().toString(16).slice(2);
+          }
+          copyEntryToFutureSameWeekday(entry.seriesId, entry.foodId, qty);
+
+
+          saveDays();
+          renderDayEntries();
+          history.back();
+        });
+      });
+
+      btnRemoveFuture.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        if (editingEntryIndex == null) return;
+
+        const entries = days[currentDateStr] || [];
+        if (editingEntryIndex < 0 || editingEntryIndex >= entries.length) return;
+
+        const entry = entries[editingEntryIndex];
+
+        showConfirm(
+          "Vuoi eliminare questo alimento da tutti i " +
+          dayNames[currentDate.getDay()].toLowerCase() + " successivi?"
+        ).then(function (ok) {
+          if (!ok) return;
+
+          const sid = ensureSeriesIdForLegacySeriesIfNeeded(entry);
+          if (!sid) return; // non era una serie (non esiste nei giorni successivi)
+
+          removeEntryFromFutureSameWeekday(entry.seriesId, entry.foodId);
+
+
+          saveDays();
+          renderDayEntries();
+          history.back();
+        });
+      });
+
+
+
+      function updateDetailDayTotalProteinLive() {
+        const el = document.getElementById("detail-total-protein");
+        if (!el) return;
+        if (editingEntryIndex == null || !currentDateStr) return;
+
+        const qtyInput = document.getElementById("detail-quantity");
+        const liveQty = Number(qtyInput && qtyInput.value) || 0;
+
+        const totalProt = computeTotalProteinForDay(currentDateStr, editingEntryIndex, liveQty);
+        el.textContent = totalProt.toFixed(1);
       }
 
       // ----------------- DETTAGLIO ALIMENTO -----------------
@@ -1168,12 +1310,10 @@
         document.getElementById("detail-food-name").textContent = food.name;
         const qtyInput = document.getElementById("detail-quantity");
         qtyInput.value = (Number(entry.quantity) || 0).toString();
-
-        // segna che il campo è appena stato aperto
         qtyInput.dataset.justOpened = "1";
 
-        updateDetailMacros();
-
+        updateDetailDayTotalProteinLive();
+        updateDetailDayTotalFatLive();
       }
 
       function closeFoodDetail() {
@@ -1184,28 +1324,9 @@
         detailOverlayOpen = false;
       }
 
-      function updateDetailMacros() {
-        if (!editingFoodId) return;
-        const food = foods[editingFoodId];
-        if (!food) return;
 
-        const qtyInput = document.getElementById("detail-quantity");
-        const quantity = Number(qtyInput.value) || 0;
-        const factor = quantity / 100;
 
-        const kcal = (Number(food.kcalPer100) || 0) * factor;
-        const carbs = (Number(food.carbsPer100) || 0) * factor;
-        const prot = (Number(food.proteinPer100) || 0) * factor;
-        const fat = (Number(food.fatPer100) || 0) * factor;
-
-        document.getElementById("detail-kcal").textContent = kcal.toFixed(0);
-        document.getElementById("detail-carbs").textContent = carbs.toFixed(1);
-        document.getElementById("detail-protein").textContent = prot.toFixed(1);
-        document.getElementById("detail-fat").textContent = fat.toFixed(1);
-      }
-
-      // ----------------- COPIA / ELIMINA GIORNI SUCCESSIVI -----------------
-      function copyEntryToFutureSameWeekday(foodId, quantity) {
+      function propagateSeriesPositionToFutureSameWeekday(seriesId, foodId, targetIndex) {
         if (!currentDate) return;
 
         const weekday = currentDate.getDay();
@@ -1213,61 +1334,48 @@
         for (let i = 1; i <= 365; i++) {
           const d = new Date(currentDate);
           d.setDate(d.getDate() + i);
-
           if (d.getDay() !== weekday) continue;
 
           const dateStr = formatDate(d);
+          const arr = days[dateStr];
+          if (!arr || !arr.length) continue;
 
-          if (!days[dateStr]) {
-            days[dateStr] = [];
-          }
-          const dayEntries = days[dateStr];
+          // 1) se esiste la stessa serie, usa quella
+          let from = arr.findIndex(e => e.seriesId === seriesId);
 
-          const existingIndex = dayEntries.findIndex(
-            (e) => e.foodId === foodId
-          );
-          if (existingIndex >= 0) {
-            dayEntries[existingIndex].quantity = quantity;
-          } else {
-            dayEntries.push({
-              foodId: foodId,
-              quantity: quantity
-            });
+          // 2) ALTRIMENTI: sposta comunque l'alimento (foodId), anche se ha seriesId diverso o nullo
+          if (from < 0) {
+            from = arr.findIndex(e => e.foodId === foodId);
+            if (from >= 0) {
+              // opzionale ma consigliato: riallineo alla serie corrente
+              arr[from].seriesId = seriesId;
+            }
           }
+
+          if (from < 0) continue;
+
+          const [item] = arr.splice(from, 1);
+
+          let idx = Number(targetIndex);
+          if (!isFinite(idx)) idx = 0;
+          if (idx < 0) idx = 0;
+          if (idx > arr.length) idx = arr.length;
+
+          arr.splice(idx, 0, item);
+          days[dateStr] = arr;
         }
-
-        saveDays();
       }
 
-      function removeEntryFromFutureSameWeekday(foodId) {
-        if (!currentDate) return;
 
-        const weekday = currentDate.getDay();
 
-        for (let i = 1; i <= 365; i++) {
-          const d = new Date(currentDate);
-          d.setDate(d.getDate() + i);
 
-          if (d.getDay() !== weekday) continue;
-
-          const dateStr = formatDate(d);
-          const dayEntries = days[dateStr];
-          if (!dayEntries || !dayEntries.length) continue;
-
-          days[dateStr] = dayEntries.filter((e) => e.foodId !== foodId);
-        }
-
-        saveDays();
-      }
 
       // ----------------- PANNELLO INSERISCI CIBO -----------------
       function showAddFoodPanel(show) {
         const panel = document.getElementById("add-food-panel");
 
         if (show) {
-          // Ogni volta che apro, voglio lo stato "come appena aperto il sito"
           resetAddFoodPanelState();
-
           panel.classList.remove("hidden");
           updateStorageUsageUI();
 
@@ -1276,43 +1384,39 @@
             addFoodPanelOpen = true;
           }
         } else {
-          // Se sto chiudendo, resetto comunque
           resetAddFoodPanelState();
-
           panel.classList.add("hidden");
           renderDayEntries();
           addFoodPanelOpen = false;
         }
       }
 
-
       function resetAddFoodPanelState() {
-        // Esci dalla modalità "Modifica"
         editingBaseFoodId = null;
 
-        // Pulisci form "Nuovo alimento"
         const form = document.getElementById("new-food-form");
         if (form) form.reset();
 
-        // Pulisci ricerca e risultati
         const search = document.getElementById("search-food-input");
         if (search) search.value = "";
 
         refreshSearchResults();
       }
 
-
       function refreshSearchResults() {
         const container = document.getElementById("search-results");
-        const term = document
-          .getElementById("search-food-input")
-          .value.toLowerCase()
-          .trim();
+        const term = document.getElementById("search-food-input").value.toLowerCase().trim();
 
         container.innerHTML = "";
-
         const entries = Object.entries(foods);
-        if (!entries.length) return;
+        if (!entries.length) {
+          const p = document.createElement("div");
+          p.className = "hint-text";
+          p.textContent = "Nessun alimento salvato. Aggiungine uno in 'Nuovo alimento'.";
+          container.appendChild(p);
+          return;
+        }
+
 
         const filtered = entries.filter(([id, food]) => {
           if (!term) return true;
@@ -1342,7 +1446,6 @@
             });
           });
 
-
           const btnEdit = document.createElement("button");
           btnEdit.type = "button";
           btnEdit.className = "food-search-edit";
@@ -1355,14 +1458,10 @@
             editingBaseFoodId = id;
 
             document.getElementById("food-name-input").value = f.name || "";
-            document.getElementById("food-kcal-input").value =
-              f.kcalPer100 != null ? f.kcalPer100 : "";
-            document.getElementById("food-carbs-input").value =
-              f.carbsPer100 != null ? f.carbsPer100 : "";
-            document.getElementById("food-protein-input").value =
-              f.proteinPer100 != null ? f.proteinPer100 : "";
-            document.getElementById("food-fat-input").value =
-              f.fatPer100 != null ? f.fatPer100 : "";
+            document.getElementById("food-kcal-input").value = f.kcalPer100 != null ? f.kcalPer100 : "";
+            document.getElementById("food-carbs-input").value = f.carbsPer100 != null ? f.carbsPer100 : "";
+            document.getElementById("food-protein-input").value = f.proteinPer100 != null ? f.proteinPer100 : "";
+            document.getElementById("food-fat-input").value = f.fatPer100 != null ? f.fatPer100 : "";
 
             document.getElementById("food-name-input").focus();
           });
@@ -1379,7 +1478,7 @@
 
             showDialog({
               type: "confirm",
-              html: 'Vuoi eliminare <strong>' + safeName + '</strong>?'
+              html: 'Vuoi eliminare <strong>' + safeName + "</strong>?"
             }).then(function (ok) {
               if (!ok) return;
 
@@ -1388,9 +1487,6 @@
               refreshSearchResults();
             });
           });
-
-
-
 
           row.appendChild(btnAdd);
           row.appendChild(btnEdit);
@@ -1402,14 +1498,86 @@
       function addExistingFoodToCurrentDay(foodId) {
         const defaultQuantity = 100;
         const entries = days[currentDateStr] || [];
+
         entries.push({
           foodId: foodId,
-          quantity: defaultQuantity
+          quantity: defaultQuantity,
+          seriesId: generateSeriesId()
         });
+
         days[currentDateStr] = entries;
         saveDays();
         renderDayEntries();
       }
+
+
+
+
+      function copyEntryToFutureSameWeekday(seriesId, foodId, quantity) {
+        if (!currentDate) return;
+
+        const weekday = currentDate.getDay();
+
+        for (let i = 1; i <= 365; i++) {
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() + i);
+
+          if (d.getDay() !== weekday) continue;
+
+          const dateStr = formatDate(d);
+          if (!days[dateStr]) days[dateStr] = [];
+
+          // 1) Cerca per seriesId
+          let idx = days[dateStr].findIndex(e => e.seriesId === seriesId);
+
+          if (idx >= 0) {
+            days[dateStr][idx].quantity = quantity;
+            days[dateStr][idx].foodId = foodId;
+            continue;
+          }
+
+          // 2) Fallback (migrazione): se esiste lo stesso foodId senza seriesId, aggancialo
+          const legacyIdx = days[dateStr].findIndex(e => e.foodId === foodId && !e.seriesId);
+          if (legacyIdx >= 0) {
+            days[dateStr][legacyIdx].seriesId = seriesId;
+            days[dateStr][legacyIdx].quantity = quantity;
+            days[dateStr][legacyIdx].foodId = foodId;
+            continue;
+          }
+
+          // 3) Altrimenti crea nuova entry
+          days[dateStr].push({ seriesId: seriesId, foodId: foodId, quantity: quantity });
+        }
+      }
+
+
+      function removeEntryFromFutureSameWeekday(seriesId, foodId) {
+        if (!currentDate) return;
+
+        const weekday = currentDate.getDay();
+
+        for (let i = 1; i <= 365; i++) {
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() + i);
+
+          if (d.getDay() !== weekday) continue;
+
+          const dateStr = formatDate(d);
+          const dayEntries = days[dateStr];
+          if (!dayEntries || !dayEntries.length) continue;
+
+          // Rimuove sia la serie corretta, sia le vecchie copie senza seriesId (legacy)
+          days[dateStr] = dayEntries.filter(e => {
+            if (e.seriesId === seriesId) return false;
+            if (!e.seriesId && e.foodId === foodId) return false;
+            return true;
+          });
+
+          if (!days[dateStr].length) delete days[dateStr];
+        }
+      }
+
+
 
       // ----------------- INIT -----------------
       function init() {
@@ -1418,23 +1586,19 @@
 
         cleanupOldDays();
 
-        document
-          .getElementById("prev-day-btn")
-          .addEventListener("click", function () {
-            if (!currentDate) return;
-            const d = new Date(currentDate);
-            d.setDate(d.getDate() - 1);
-            setCurrentDate(d);
-          });
+        document.getElementById("prev-day-btn").addEventListener("click", function () {
+          if (!currentDate) return;
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() - 1);
+          setCurrentDate(d);
+        });
 
-        document
-          .getElementById("next-day-btn")
-          .addEventListener("click", function () {
-            if (!currentDate) return;
-            const d = new Date(currentDate);
-            d.setDate(d.getDate() + 1);
-            setCurrentDate(d);
-          });
+        document.getElementById("next-day-btn").addEventListener("click", function () {
+          if (!currentDate) return;
+          const d = new Date(currentDate);
+          d.setDate(d.getDate() + 1);
+          setCurrentDate(d);
+        });
 
         window.addEventListener("popstate", function () {
           const detail = document.getElementById("food-detail-overlay");
@@ -1446,237 +1610,85 @@
           }
 
           if (addFoodPanelOpen && panel && !panel.classList.contains("hidden")) {
-            resetAddFoodPanelState(); // annulla eventuale "Modifica"
+            resetAddFoodPanelState();
             panel.classList.add("hidden");
             renderDayEntries();
             addFoodPanelOpen = false;
           }
-
         });
 
-        document
-          .getElementById("add-food-btn")
-          .addEventListener("click", function () {
-            showAddFoodPanel(true);
-          });
+        document.getElementById("add-food-btn").addEventListener("click", function () {
+          showAddFoodPanel(true);
+        });
 
-        document
-          .getElementById("back-to-day-btn")
-          .addEventListener("click", function () {
-            resetAddFoodPanelState(); // annulla eventuale "Modifica"
-            history.back();
-          });
+        document.getElementById("back-to-day-btn").addEventListener("click", function () {
+          resetAddFoodPanelState();
+          history.back();
+        });
 
+        document.getElementById("search-food-input").addEventListener("input", refreshSearchResults);
 
-        document
-          .getElementById("search-food-input")
-          .addEventListener("input", refreshSearchResults);
-
-        document
-          .getElementById("close-detail-btn")
-          .addEventListener("click", function () {
-            history.back();
-          });
+        document.getElementById("close-detail-btn").addEventListener("click", function () {
+          history.back();
+        });
 
         const qtyInput = document.getElementById("detail-quantity");
 
-        // handler unico per svuotare al primo tocco
         function clearQtyOnFirstTap() {
           if (qtyInput.dataset.justOpened === "1") {
             qtyInput.value = "";
-            qtyInput.dataset.justOpened = "0"; // da ora in poi non svuota più
-            updateDetailMacros();
+            qtyInput.dataset.justOpened = "0";
+            updateDetailDayTotalProteinLive();
+            updateDetailDayTotalFatLive();
           }
         }
 
-        // aggiorna i macro mentre scrivi
-        qtyInput.addEventListener("input", updateDetailMacros);
-
-        // svuota PRIMA del focus, per qualsiasi tipo di tocco/click
+        qtyInput.addEventListener("input", updateDetailDayTotalProteinLive);
+        qtyInput.addEventListener("input", updateDetailDayTotalFatLive);
         qtyInput.addEventListener("pointerdown", clearQtyOnFirstTap);
         qtyInput.addEventListener("touchstart", clearQtyOnFirstTap);
         qtyInput.addEventListener("mousedown", clearQtyOnFirstTap);
 
+        document.getElementById("food-detail-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          if (editingEntryIndex == null) return;
+
+          const entries = days[currentDateStr] || [];
+          if (editingEntryIndex < 0 || editingEntryIndex >= entries.length) return;
+
+          const qty = Number(document.getElementById("detail-quantity").value);
+          if (!qty || qty <= 0 || !isFinite(qty)) {
+            showAlert("Quantità non valida.");
+            return;
+          }
 
 
 
-        document
-          .getElementById("food-detail-form")
-          .addEventListener("submit", function (e) {
-            e.preventDefault();
-            if (editingEntryIndex == null) return;
-            const entries = days[currentDateStr] || [];
-            if (editingEntryIndex < 0 || editingEntryIndex >= entries.length)
-              return;
 
-            const qty = Number(
-              document.getElementById("detail-quantity").value
-            );
-            if (!qty || qty <= 0 || !isFinite(qty)) {
-              showAlert("Quantità non valida.");
-              return;
-            }
-
-
-            entries[editingEntryIndex].quantity = qty;
-            days[currentDateStr] = entries;
-            saveDays();
-            renderDayEntries();
-            history.back();
-          });
-
-        // Pulsante "Giorni successivi"
-        const btnApplyFuture = document.getElementById("apply-future-btn");
-        if (btnApplyFuture) {
-          btnApplyFuture.addEventListener("click", function () {
-            if (editingEntryIndex == null) return;
-
-            const entries = days[currentDateStr] || [];
-            if (
-              editingEntryIndex < 0 ||
-              editingEntryIndex >= entries.length
-            )
-              return;
-
-            const entry = entries[editingEntryIndex];
-            const qtyInput = document.getElementById("detail-quantity");
-            const newQty = Number(qtyInput.value);
-
-            if (!newQty || newQty <= 0 || !isFinite(newQty)) {
-              showAlert(
-                "Inserisci una quantità valida prima di usare 'Giorni successivi'."
-              );
-              return;
-            }
-
-
-            // aggiorno il giorno corrente
-            entry.quantity = newQty;
-            days[currentDateStr] = entries;
-            saveDays();
-            renderDayEntries();
-
-            showConfirm(
-              "Vuoi salvare questo alimento con " +
-              newQty +
-              " g in tutti i giorni successivi di " +
-              dayNames[currentDate.getDay()] +
-              "?"
-            ).then(function (ok) {
-              if (!ok) return;
-
-              copyEntryToFutureSameWeekday(entry.foodId, newQty);
-              // torni alla schermata principale
-              history.back();
-            });
-
-          });
-        }
-
-
-
-        // Pulsante "Elimina giorni succ."
-        const btnRemoveFuture = document.getElementById("remove-future-btn");
-        if (btnRemoveFuture) {
-          btnRemoveFuture.addEventListener("click", function () {
-            if (editingEntryIndex == null) return;
-
-            const entries = days[currentDateStr] || [];
-            if (
-              editingEntryIndex < 0 ||
-              editingEntryIndex >= entries.length
-            ) {
-              return;
-            }
-
-            const entry = entries[editingEntryIndex];
-            showConfirm(
-              "Vuoi eliminare questo alimento da tutti i " +
-              dayNames[currentDate.getDay()].toLowerCase() +
-              " successivi?"
-            ).then(function (ok) {
-              if (!ok) return;
-
-              removeEntryFromFutureSameWeekday(entry.foodId);
-              // niente popup di conferma, torni alla lista
-              history.back();
-            });
-
-          });
-        }
-
-
-
-        // Adatta il popup quando compare la tastiera
-        if (window.visualViewport) {
-          const overlayContent = document.querySelector(
-            "#food-detail-overlay .overlay-content"
-          );
-
-          window.visualViewport.addEventListener("resize", function () {
-            if (!overlayContent) return;
-            const vv = window.visualViewport;
-            const offsetBottom =
-              window.innerHeight - vv.height - vv.offsetTop;
-
-            if (offsetBottom > 80) {
-              // si sposta solo di una parte dell'altezza della tastiera
-              const move = offsetBottom * 0.3; // prova 0.3 / 0.25 / 0.4 per regolare
-              overlayContent.style.transform =
-                "translateY(-" + move + "px)";
-            } else {
-              overlayContent.style.transform = "";
-            }
-
-          });
-        }
-
+          entries[editingEntryIndex].quantity = qty;
+          days[currentDateStr] = entries;
+          saveDays();
+          renderDayEntries();
+          history.back();
+        });
 
         // --------- SALVATAGGIO NUOVO ALIMENTO ----------
-        document
-          .getElementById("new-food-form")
-          .addEventListener("submit", function (e) {
-            e.preventDefault();
-            const name = document
-              .getElementById("food-name-input")
-              .value.trim();
-            if (!name) {
-              showAlert("Inserisci un nome per l'alimento.");
-              return;
-            }
+        document.getElementById("new-food-form").addEventListener("submit", function (e) {
+          e.preventDefault();
 
+          const name = document.getElementById("food-name-input").value.trim();
+          if (!name) {
+            showAlert("Inserisci un nome per l'alimento.");
+            return;
+          }
 
-            const kcal =
-              Number(document.getElementById("food-kcal-input").value) || 0;
-            const carbs =
-              Number(document.getElementById("food-carbs-input").value) || 0;
-            const prot =
-              Number(document.getElementById("food-protein-input").value) || 0;
-            const fat =
-              Number(document.getElementById("food-fat-input").value) || 0;
+          const kcal = Number(document.getElementById("food-kcal-input").value) || 0;
+          const carbs = Number(document.getElementById("food-carbs-input").value) || 0;
+          const prot = Number(document.getElementById("food-protein-input").value) || 0;
+          const fat = Number(document.getElementById("food-fat-input").value) || 0;
 
-            if (editingBaseFoodId && foods[editingBaseFoodId]) {
-              foods[editingBaseFoodId] = {
-                name: name,
-                kcalPer100: kcal,
-                carbsPer100: carbs,
-                proteinPer100: prot,
-                fatPer100: fat
-              };
-              saveFoods();
-              editingBaseFoodId = null;
-              document.getElementById("new-food-form").reset();
-              refreshSearchResults();
-              return;
-            }
-
-            const id =
-              "f_" +
-              Date.now().toString(36) +
-              "_" +
-              Math.random().toString(16).slice(2);
-
-            foods[id] = {
+          if (editingBaseFoodId && foods[editingBaseFoodId]) {
+            foods[editingBaseFoodId] = {
               name: name,
               kcalPer100: kcal,
               carbsPer100: carbs,
@@ -1684,38 +1696,49 @@
               fatPer100: fat
             };
             saveFoods();
-
+            editingBaseFoodId = null;
             document.getElementById("new-food-form").reset();
             refreshSearchResults();
+            return;
+          }
 
-            const today = new Date();
-            const isToday =
-              currentDate.getFullYear() === today.getFullYear() &&
-              currentDate.getMonth() === today.getMonth() &&
-              currentDate.getDate() === today.getDate();
+          const id =
+            "f_" + Date.now().toString(36) + "_" + Math.random().toString(16).slice(2);
 
-            let labelGiorno;
-            if (isToday) {
-              labelGiorno = "di oggi";
-            } else {
-              const d = currentDate.getDate();
-              const m = monthNames[currentDate.getMonth()];
-              labelGiorno = "del " + d + " " + m;
-            }
+          foods[id] = {
+            name: name,
+            kcalPer100: kcal,
+            carbsPer100: carbs,
+            proteinPer100: prot,
+            fatPer100: fat
+          };
+          saveFoods();
 
-            showConfirm(
-              "Alimento salvato.\nVuoi aggiungerlo subito alla giornata " +
-              labelGiorno +
-              "?"
-            ).then(function (ok) {
-              if (ok) {
-                addExistingFoodToCurrentDay(id);
-              }
-            });
+          document.getElementById("new-food-form").reset();
+          refreshSearchResults();
 
+          const today = new Date();
+          const isToday =
+            currentDate.getFullYear() === today.getFullYear() &&
+            currentDate.getMonth() === today.getMonth() &&
+            currentDate.getDate() === today.getDate();
+
+          let labelGiorno;
+          if (isToday) {
+            labelGiorno = "di oggi";
+          } else {
+            const d = currentDate.getDate();
+            const m = monthNames[currentDate.getMonth()];
+            labelGiorno = "del " + d + " " + m;
+          }
+
+          showConfirm(
+            "Alimento salvato.\nVuoi aggiungerlo subito alla giornata " + labelGiorno + "?"
+          ).then(function (ok) {
+            if (ok) addExistingFoodToCurrentDay(id);
           });
+        });
 
-        // --------- AVVIO INIZIALE ----------
         const today = new Date();
         setCurrentDate(today);
         updateStorageUsageUI();
