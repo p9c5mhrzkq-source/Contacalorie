@@ -557,7 +557,7 @@
 
     #food-detail-overlay .overlay-content {
       padding-bottom: calc(1rem + var(--kb-offset));
-      transform: translateY(calc(-1 * min(calc(var(--kb-offset) * 0.25), 100px)));
+      transform: translateY(calc(-1 * min(var(--kb-offset), 220px)));
       max-height: calc(90dvh - var(--kb-offset));
     }
   </style>
@@ -1437,6 +1437,7 @@
         const overlay = document.getElementById("food-detail-overlay");
         overlay.classList.add("hidden");
         overlay.style.setProperty("--kb-offset", "0px");
+
         editingEntryIndex = null;
         editingFoodId = null;
         detailOverlayOpen = false;
