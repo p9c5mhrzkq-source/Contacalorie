@@ -194,27 +194,44 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.7);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      /* MODIFICATO: non più center */
       justify-content: center;
+      padding-top: 10vh;
+      /* AGGIUNTO: la alza */
+      padding-bottom: 6vh;
+      /* AGGIUNTO: margine sotto (utile con tastiera) */
       z-index: 20;
     }
+
 
     .overlay.hidden {
       display: none;
     }
 
-   .overlay-content {
-  background: #111827;
-  border-radius: 1rem;
-  padding: 1rem;
-  width: calc(100% - 2rem);
-  max-width: 420px;
-  max-height: 90vh;
-  overflow-y: auto;
-  color: #f9fafb;
-  transition: transform 0.2s ease-out;
-  transform: translateY(-15vh);
-}
+    .overlay-content {
+      background: #111827;
+      border-radius: 1rem;
+      padding: 1rem;
+      width: calc(100% - 2rem);
+      max-width: 420px;
+
+      max-height: 90vh;
+      /* lasciata come fallback */
+      max-height: 90dvh;
+      /* AGGIUNTO: migliore su mobile con tastiera */
+
+      overflow-y: auto;
+      color: #f9fafb;
+      transition: transform 0.2s ease-out;
+
+      /* RIMOSSO:
+  position: relative;
+  top: -8vh;
+  */
+    }
+
+
 
 
     .overlay-header {
@@ -1751,5 +1768,3 @@
 </body>
 
 </html>
-
-
