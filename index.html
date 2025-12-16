@@ -549,17 +549,6 @@
       /* o il valore che ti piace di più */
       text-align: center;
     }
-
-    /* --- FIX TASTIERA: alza il popup quando compare la keyboard --- */
-    #food-detail-overlay {
-      --kb-offset: 0px;
-    }
-
-    #food-detail-overlay .overlay-content {
-      padding-bottom: calc(1rem + var(--kb-offset));
-      transform: translateY(calc(-1 * min(var(--kb-offset), 220px)));
-      max-height: calc(90dvh - var(--kb-offset));
-    }
   </style>
 </head>
 
@@ -1412,9 +1401,6 @@
 
         const overlay = document.getElementById("food-detail-overlay");
         overlay.classList.remove("hidden");
-        updateDetailOverlayKeyboardOffset();
-
-
 
         if (!detailOverlayOpen) {
           history.pushState({ detailOverlay: true }, "");
@@ -1436,36 +1422,10 @@
       function closeFoodDetail() {
         const overlay = document.getElementById("food-detail-overlay");
         overlay.classList.add("hidden");
-        overlay.style.setProperty("--kb-offset", "0px");
-
         editingEntryIndex = null;
         editingFoodId = null;
         detailOverlayOpen = false;
       }
-
-      function updateDetailOverlayKeyboardOffset() {
-        const overlay = document.getElementById("food-detail-overlay");
-        if (!overlay) return;
-
-        // se l’overlay è chiuso, reset
-        if (overlay.classList.contains("hidden")) {
-          overlay.style.setProperty("--kb-offset", "0px");
-          return;
-        }
-
-        const vv = window.visualViewport;
-        if (!vv) return;
-
-        // stima altezza tastiera
-        const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-        overlay.style.setProperty("--kb-offset", kb + "px");
-      }
-
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", updateDetailOverlayKeyboardOffset);
-        window.visualViewport.addEventListener("scroll", updateDetailOverlayKeyboardOffset);
-      }
-
 
 
 
