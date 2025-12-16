@@ -304,9 +304,13 @@
     }
 
     .detail-macros {
-      display: none;
-      /* nasconde Calorie / Carboidrati / Proteine / Grassi */
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
     }
+
 
 
     .detail-macro-card {
@@ -599,12 +603,16 @@
           <div class="overlay-title" id="detail-food-name"></div>
 
           <div class="overlay-subtitle">
+            Carboidrati: <span id="detail-total-carbs">0.0</span> g
+          </div>
+          <div class="overlay-subtitle">
             Proteine: <span id="detail-total-protein">0.0</span> g
           </div>
           <div class="overlay-subtitle">
             Grassi: <span id="detail-total-fat">0.0</span> g
           </div>
         </div>
+
 
         <button class="close-btn" id="close-detail-btn" type="button">&times;</button>
       </div>
@@ -615,7 +623,13 @@
           <input type="number" id="detail-quantity" min="0" step="1" />
         </div>
 
-        <div class="detail-macros">...</div>
+        <div class="detail-macros" id="detail-food-macros">
+          <div>Calorie: <span id="detail-food-kcal">0</span> kcal</div>
+          <div>Carboidrati: <span id="detail-food-carbs">0.0</span> g</div>
+          <div>Proteine: <span id="detail-food-protein">0.0</span> g</div>
+          <div>Grassi: <span id="detail-food-fat">0.0</span> g</div>
+        </div>
+
 
         <div class="detail-actions">
           <button class="btn btn-secondary" type="button" id="remove-future-btn">
@@ -768,6 +782,8 @@
             resolve(result);
           }
 
+
+
           function onOk(e) {
             e.stopPropagation();
             cleanup(true);
@@ -794,6 +810,33 @@
       let foods = {};
       let days = {};
 
+      function updateDetailFoodMacrosLive() {
+        if (!editingFoodId) return;
+
+        const food = foods[editingFoodId];
+        if (!food) return;
+
+        const qtyInput = document.getElementById("detail-quantity");
+        const grams = toNum(qtyInput && qtyInput.value);
+        const factor = grams / 100;
+
+        const kcal = toNum(food.kcalPer100) * factor;
+        const carbs = toNum(food.carbsPer100) * factor;
+        const prot = toNum(food.proteinPer100) * factor;
+        const fat = toNum(food.fatPer100) * factor;
+
+        const elKcal = document.getElementById("detail-food-kcal");
+        const elCarbs = document.getElementById("detail-food-carbs");
+        const elProt = document.getElementById("detail-food-protein");
+        const elFat = document.getElementById("detail-food-fat");
+
+        if (elKcal) elKcal.textContent = kcal.toFixed(0);
+        if (elCarbs) elCarbs.textContent = carbs.toFixed(1);
+        if (elProt) elProt.textContent = prot.toFixed(1);
+        if (elFat) elFat.textContent = fat.toFixed(1);
+      }
+
+
       let currentDate = null;
       let currentDateStr = "";
 
@@ -805,6 +848,7 @@
       let editingBaseFoodId = null;
       let addFoodPanelOpen = false;
       let detailOverlayOpen = false;
+
 
       // ----------------- UTIL -----------------
       function loadFromStorage(key, defaultValue) {
@@ -818,6 +862,13 @@
           return defaultValue;
         }
       }
+
+      function toNum(v) {
+        const s = String(v ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+        const n = parseFloat(s);
+        return Number.isFinite(n) ? n : 0;
+      }
+
 
       function saveToStorage(key, value) {
         try {
@@ -947,10 +998,11 @@
           const quantity = Number(entry.quantity) || 0;
           const factor = quantity / 100;
 
-          const kcal = (Number(food.kcalPer100) || 0) * factor;
-          const carbs = (Number(food.carbsPer100) || 0) * factor;
-          const prot = (Number(food.proteinPer100) || 0) * factor;
-          const fat = (Number(food.fatPer100) || 0) * factor;
+          const kcal = toNum(food.kcalPer100) * factor;
+          const carbs = toNum(food.carbsPer100) * factor;
+          const prot = toNum(food.proteinPer100) * factor;
+          const fat = toNum(food.fatPer100) * factor;
+
 
           totalKcal += kcal;
           totalCarbs += carbs;
@@ -1223,6 +1275,36 @@
         el.textContent = totalFat.toFixed(1);
       }
 
+      function computeTotalCarbsForDay(dateStr, overrideIndex, overrideQuantity) {
+        const entries = days[dateStr] || [];
+        let totalCarbs = 0;
+
+        entries.forEach((entry, idx) => {
+          const food = foods[entry.foodId];
+          if (!food) return;
+
+          const qty = (idx === overrideIndex) ? overrideQuantity : (Number(entry.quantity) || 0);
+          const factor = (Number(qty) || 0) / 100;
+
+          totalCarbs += (Number(food.carbsPer100) || 0) * factor;
+        });
+
+        return totalCarbs;
+      }
+
+      function updateDetailDayTotalCarbsLive() {
+        const el = document.getElementById("detail-total-carbs");
+        if (!el) return;
+        if (editingEntryIndex == null || !currentDateStr) return;
+
+        const qtyInput = document.getElementById("detail-quantity");
+        const liveQty = Number(qtyInput && qtyInput.value) || 0;
+
+        const totalCarbs = computeTotalCarbsForDay(currentDateStr, editingEntryIndex, liveQty);
+        el.textContent = totalCarbs.toFixed(1);
+      }
+
+
       // --- BOTTONI: Giorni successivi / Elimina dai giorni successivi ---
       const btnApplyFuture = document.getElementById("apply-future-btn");
       const btnRemoveFuture = document.getElementById("remove-future-btn");
@@ -1330,8 +1412,11 @@
         qtyInput.value = (Number(entry.quantity) || 0).toString();
         qtyInput.dataset.justOpened = "1";
 
+        updateDetailFoodMacrosLive();
         updateDetailDayTotalProteinLive();
         updateDetailDayTotalFatLive();
+        updateDetailDayTotalCarbsLive();
+
       }
 
       function closeFoodDetail() {
@@ -1656,13 +1741,26 @@
           if (qtyInput.dataset.justOpened === "1") {
             qtyInput.value = "";
             qtyInput.dataset.justOpened = "0";
+
+            // macro alimento (NUOVO)
+            updateDetailFoodMacrosLive();
+
+            // totali giornata (GIÀ ESISTENTI)
             updateDetailDayTotalProteinLive();
             updateDetailDayTotalFatLive();
+            updateDetailDayTotalCarbsLive();
           }
         }
 
-        qtyInput.addEventListener("input", updateDetailDayTotalProteinLive);
-        qtyInput.addEventListener("input", updateDetailDayTotalFatLive);
+        // Un solo listener input che aggiorna tutto (più stabile e non duplica logica)
+        qtyInput.addEventListener("input", () => {
+          updateDetailFoodMacrosLive();
+          updateDetailDayTotalProteinLive();
+          updateDetailDayTotalFatLive();
+          updateDetailDayTotalCarbsLive();
+        });
+
+
         qtyInput.addEventListener("pointerdown", clearQtyOnFirstTap);
         qtyInput.addEventListener("touchstart", clearQtyOnFirstTap);
         qtyInput.addEventListener("mousedown", clearQtyOnFirstTap);
@@ -1700,10 +1798,11 @@
             return;
           }
 
-          const kcal = Number(document.getElementById("food-kcal-input").value) || 0;
-          const carbs = Number(document.getElementById("food-carbs-input").value) || 0;
-          const prot = Number(document.getElementById("food-protein-input").value) || 0;
-          const fat = Number(document.getElementById("food-fat-input").value) || 0;
+          const kcal = toNum(document.getElementById("food-kcal-input").value);
+          const carbs = toNum(document.getElementById("food-carbs-input").value);
+          const prot = toNum(document.getElementById("food-protein-input").value);
+          const fat = toNum(document.getElementById("food-fat-input").value);
+
 
           if (editingBaseFoodId && foods[editingBaseFoodId]) {
             foods[editingBaseFoodId] = {
