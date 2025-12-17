@@ -549,6 +549,45 @@
       /* o il valore che ti piace di più */
       text-align: center;
     }
+
+    /* --- FIX TASTIERA: alza leggermente il popup quando compare la keyboard --- */
+    #food-detail-overlay {
+      --kb-offset: 0px;
+    }
+
+    #food-detail-overlay .overlay-content {
+      /* limita quanto padding aggiungi sotto (così non “spinge” troppo) */
+      padding-bottom: calc(1rem + min(var(--kb-offset), 60px));
+
+      /* alza meno: segue solo il 25% della tastiera, con tetto max 90px */
+      transform: translateY(calc(-1 * min(calc(var(--kb-offset) * 0.25 + 8px), 90px)));
+
+      /* lascia pure così com’è (o 90dvh) */
+      max-height: 90dvh;
+    }
+
+
+    <style>
+    /* ...tutto il tuo CSS già presente... */
+
+    /* --- FIX TASTIERA: ... --- */
+    #food-detail-overlay {
+      --kb-offset: 0px;
+    }
+
+    #food-detail-overlay .overlay-content {
+      /* ... */
+    }
+
+    /* INCOLLA QUI */
+    #food-detail-overlay #food-detail-form button[type="submit"] {
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+      margin-top: 0.75rem;
+    }
+  </style>
+
   </style>
 </head>
 
@@ -1422,10 +1461,36 @@
       function closeFoodDetail() {
         const overlay = document.getElementById("food-detail-overlay");
         overlay.classList.add("hidden");
+        overlay.style.setProperty("--kb-offset", "0px"); // <-- aggiungi
         editingEntryIndex = null;
         editingFoodId = null;
         detailOverlayOpen = false;
       }
+
+
+      function updateDetailOverlayKeyboardOffset() {
+        const overlay = document.getElementById("food-detail-overlay");
+        if (!overlay) return;
+
+        // se l’overlay è chiuso, reset
+        if (overlay.classList.contains("hidden")) {
+          overlay.style.setProperty("--kb-offset", "0px");
+          return;
+        }
+
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        // stima altezza tastiera
+        const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        overlay.style.setProperty("--kb-offset", kb + "px");
+      }
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", updateDetailOverlayKeyboardOffset);
+        window.visualViewport.addEventListener("scroll", updateDetailOverlayKeyboardOffset);
+      }
+
 
 
 
@@ -1758,6 +1823,8 @@
           updateDetailDayTotalProteinLive();
           updateDetailDayTotalFatLive();
           updateDetailDayTotalCarbsLive();
+          updateDetailOverlayKeyboardOffset();
+
         });
 
 
